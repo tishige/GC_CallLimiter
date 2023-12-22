@@ -1,0 +1,26 @@
+{
+  "NLog": {
+    "throwConfigExceptions": true,
+
+    "targets": {
+      "logfile": {
+        "type": "File",
+        "fileName": "/var/log/CallLimiter/${processname}_${date:format=yyyy-MM-dd}.log",
+        "archiveFileName": "/var/log/CallLimiter/${processname}.{#}.zip",
+        "archiveEvery": "Day",
+        "archiveNumbering": "Date",
+        "archiveDateFormat": "yyyyMMdd",
+        "maxArchiveFiles": "7",
+        "enableArchiveFileCompression": "true"
+      }
+    },
+
+    "rules": [
+      {
+        "logger": "CallLimiter.*",
+        "minLevel": "debug",
+        "writeTo": "logfile"
+      }
+    ]
+  }
+}  

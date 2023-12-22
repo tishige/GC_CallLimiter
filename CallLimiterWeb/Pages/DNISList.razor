@@ -1,0 +1,233 @@
+﻿@page "/DNISList"
+
+@using CallLimiterWeb.Data;
+@using Radzen.Blazor;
+@using Radzen;
+
+<PageTitle>Index</PageTitle>
+
+<h2>CallLimit List</h2>
+
+<style>
+.green-text {
+	color: green;
+		font-weight: bold;
+	}
+
+.red-text {
+	color: red;
+		font-weight: bold;
+	}
+
+.yellow-text {
+	color: orange;
+		font-weight: bold;
+	}
+</style>
+
+
+@if (systemSettings != null)
+{
+	<h3 class="@GetColorClass(systemSettings)">Mode : @GetDisplayText(systemSettings)</h3>
+}
+
+@if (limitSettings is null)
+{
+	<p>Loading</p>
+}
+else
+{
+	<div style="margin-bottom: 20px;margin-left: 20px">
+		<RadzenButton Click="@OnAddButtonClick" Text="Add New" Icon="add_circle_outline" ButtonStyle="ButtonStyle.Primary" />
+
+	</div>
+	<RadzenRow JustifyContent="@justifyContent" AlignItems="@alignItems" Gap="@gap" class="rz-border-info-light">
+		<RadzenDataGrid AllowColumnPicking="true" AllowFiltering="true" AllowPaging="true" AllowColumnResize="true" AllowSorting="true" FilterPopupRenderMode="PopupRenderMode.OnDemand" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+						Data="@limitSettings" TItem="LimitSettingsDTO" PagerHorizontalAlign="HorizontalAlign.Center" ColumnWidth="100px" PageSize=50>
+			<Columns>
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="DNIS" Title="DNIS" Width="80px">
+
+					<Template Context="limitSettings">
+						<a href="@($"DNIS/edit/{limitSettings.LimitSettingsId}")">@limitSettings.DNIS</a>
+
+					</Template>
+
+
+					<FooterTemplate>
+						Total records: <b>@limitSettings.Count()</b>
+					</FooterTemplate>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="Description" Title="Description" Width="90px" />
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="IsEnabled" Title="Enabled" Width="55px">
+					<Template Context="limitSettings">
+						<RadzenSwitch Value="@limitSettings.IsEnabled" Disabled="true" />
+					</Template>
+				</RadzenDataGridColumn>
+
+
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="IsAllBusy" Title="ALL Busy" Width="55px">
+					<Template Context="limitSettings">
+						<RadzenSwitch Value="@limitSettings.IsAllBusy" Disabled="true" />
+					</Template>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="Type" Title="Type" Width="90px" />
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="MaxLimitValue" Title="MAX Limit Value" Width="80px">
+					<Template Context="data">
+						@if (data.Type != "Queue Available Agents")
+						{
+							<text>@data.MaxLimitValue</text>
+						}
+					</Template>
+				</RadzenDataGridColumn>
+
+
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="AvailableAgentsLimitValue" Title="Avail Agents <=" Width="90px">
+					<Template Context="data">
+						@if (data.Type == "Queue Available Agents")
+						{
+							<text>@data.AvailableAgentsLimitValue</text>
+						}
+					</Template>
+
+
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Title="DID" Filterable="false" Sortable="false">
+					<Template Context="limitSettings">
+						@ConvertListToString(limitSettings.DNISList)
+					</Template>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Title="Queue" Filterable="false" Sortable="false">
+					<Template Context="limitSettings">
+						@ConvertListToString1(limitSettings.QueueList)
+					</Template>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="Conditions" Title="Conditions" Filterable="false" Sortable="false" Width="55px" >
+					<Template Context="data">
+						@if (data.Type == "Calls Waiting" || data.Type == "Queue Interactions" || data.Type == "Calls Waiting+Interactions" || data.Type == "Queue Available Agents")
+						{
+							<text>@data.Conditions</text>
+						}
+					</Template>
+					
+					
+				</RadzenDataGridColumn>
+
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="ScheduleStart" Title="Schedule Start" Width="70px">
+					<Template Context="data">
+						@if (data.IsScheduled)
+						{
+							<text>@data.ScheduleStart</text>
+						}
+					</Template>
+				</RadzenDataGridColumn>
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="ScheduleEnd" Title="Schedule End" Width="70px">
+					<Template Context="data">
+						@if (data.IsScheduled)
+						{
+							<text>@data.ScheduleEnd</text>
+						}
+					</Template>
+				</RadzenDataGridColumn>
+
+
+				<RadzenDataGridColumn TItem="LimitSettingsDTO" Property="DivisionName" Title="Division" Width="90px" />
+
+			</Columns>
+		</RadzenDataGrid>
+	</RadzenRow>
+
+}
+
+
+@code {
+
+
+	@inject NavigationManager _navigationManager
+	@inject IDNISService DNISService;
+
+	AlignItems alignItems = AlignItems.Normal;
+	JustifyContent justifyContent = JustifyContent.Normal;
+	string gap = "1rem";
+
+	string? systemSettings;
+
+	private List<LimitSettingsDTO>? limitSettings;
+
+	protected override async Task OnInitializedAsync()
+	{
+		systemSettings = await DNISService.GetSystemSettingsREDIS();
+		limitSettings = await DNISService.GetAllSettingsAsync();
+		//limitSettings = limitSettings.OrderByDescending(x => x.DateCreated).ToList();
+		limitSettings = limitSettings.OrderByDescending(x => x.DateModified != DateTime.MinValue ? x.DateModified : x.DateCreated).ThenBy(x => x.DNIS).ToList();
+	}
+
+
+	public string ConvertListToString(List<DNISListDTO> list)
+	{
+		if(list != null && list.Count > 0)
+		{
+			return string.Join(", ", list.Select(x => x.DNIS));
+		}
+
+		return null!;
+	}
+
+	public string ConvertListToString1(List<QueueListDTO> list)
+	{
+		if (list != null && list.Count > 0)
+		{
+			return string.Join(", ", list.Select(x => x.QueueName));
+		}
+
+		return null!;
+
+	}
+
+	private void OnAddButtonClick()
+	{
+		_navigationManager.NavigateTo("/DNIS/add");
+	}
+
+	private string GetColorClass(string systemSettings)
+	{
+
+		if (systemSettings == null)
+		{
+			return string.Empty;
+		}
+
+		switch (systemSettings)
+		{
+			case "Unlimited":
+				return "green-text";
+			case "AllBusy":
+				return "red-text";
+			case "DNIS":
+				return "yellow-text";
+			default:
+				return string.Empty;
+		}
+	}
+
+	private string GetDisplayText(string systemSettings)
+	{
+		switch (systemSettings)
+		{
+			case "AllBusy":
+				return "All Busy";
+			default:
+				return systemSettings;
+		}
+	}
+
+}

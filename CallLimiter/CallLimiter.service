@@ -1,0 +1,9 @@
+[Unit]
+Description=CallLimiter
+
+[Service]
+Type=notify
+ExecStart=/usr/local/CallLimiter/CallLimiter
+
+[Install]
+WantedBy=multi-user.target

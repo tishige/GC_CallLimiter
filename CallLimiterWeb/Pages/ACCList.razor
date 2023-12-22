@@ -1,0 +1,177 @@
+﻿@page "/ACCList"
+
+@using CallLimiterWeb.Data;
+@using Radzen.Blazor;
+@using Radzen;
+
+<style>
+	.layout-container {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.header {
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.date-selection {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom:10px;
+	}
+
+	.date-label {
+		margin: 0 10px;
+	}
+</style>
+
+<PageTitle>Index</PageTitle>
+
+<h2>Call Details</h2>
+
+@if (accList is null)
+{
+	<p>Loading</p>
+}
+else
+{
+	
+	<div class="layout-container">
+
+
+		<div class="date-selection">
+			<div>
+				<RadzenDatePicker @bind-Value="startDate" ShowTime="true" ShowSeconds="true" DateFormat="yyyy/MM/dd HH:mm:ss" Placeholder="Start Date" />
+				<span class="date-label"> TO </span>
+				<RadzenDatePicker @bind-Value="endDate" ShowTime="true" ShowSeconds="true" DateFormat="yyyy/MM/dd HH:mm:ss" Placeholder="End Date" />
+				<RadzenButton Text="Load Data" Icon="refresh" Click="() => LoadData(startDate, endDate)" Style="height: 36px;" />
+			</div>
+			
+			<RadzenButton Text="Export EXCEL" Icon="wrap_text" Click="@Export" Style="height: 36px;" />
+		</div>
+		<RadzenDialog />
+		<RadzenDataGrid @ref="grid" AllowColumnPicking="true" AllowFiltering="true" AllowPaging="true" AllowSorting="true" Data="@accList" TItem="AccDTO" PageSize=50>
+			
+			<Columns>
+				<RadzenDataGridColumn TItem="Acc" Property="Time" Title="DateTime">
+
+					<Template Context="accList">
+						@accList.Time
+
+					</Template>
+
+					<FooterTemplate>
+						Total records: <b>@accList.Count()</b>
+					</FooterTemplate>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn TItem="AccDTO" Property="Acc.Time" Title="DateTime" />
+				<RadzenDataGridColumn TItem="AccDTO" Property="Acc.Dst_user" Title="DNIS(Dst_user)" />
+				<RadzenDataGridColumn TItem="AccDTO" Property="Acc.Src_user" Title="ANI(Src_user)" />
+				<RadzenDataGridColumn TItem="AccDTO" Property="Acc.Sip_code" Title="SIP Code" />
+				<RadzenDataGridColumn TItem="AccDTO" Property="Acc.Sip_reason" Title="Reason" />
+				<RadzenDataGridColumn TItem="AccDTO" Property="Description" Title="LimitSettings">
+
+					<Template Context="AccDTO">
+
+						@if (AccDTO.Acc.LimitSettingsId != null && AccDTO.Acc.LimitSettingsId.Length == 36)
+						{
+							<a href="@($"DNIS/edit/{AccDTO.Acc.LimitSettingsId}")">@AccDTO.Description</a>
+						}
+						else
+						{
+							@AccDTO.Acc.LimitSettingsId
+						}
+
+
+					</Template>
+				</RadzenDataGridColumn>
+				<RadzenDataGridColumn TItem="AccDTO" Property="Acc.LimitSettingsId" Title="LimitSettingsId" />
+
+			</Columns>
+		</RadzenDataGrid>
+		
+	</div>
+	<RadzenButton Text="BACK" Click="@OnCancelButtonClick" style="background-color: white; color: black; border-color: #ccc; margin-right: 100px;margin-top: 20px;" />
+	
+}
+
+
+@code {
+	
+	@inject NavigationManager _navigationManager;
+	@inject DialogService DialogService;
+	@inject IJSRuntime JSRuntime;
+	@inject IDNISService DNISService;
+	@inject IHttpClientFactory ClientFactory;
+
+
+	DateTime startDate { get; set; }
+	DateTime endDate { get; set; }
+	private List<AccDTO>? accList;
+	RadzenDataGrid<AccDTO>? grid;
+
+	private async Task LoadData(DateTime start, DateTime end)
+	{
+		accList = await DNISService.GetAccAsync(start, end);
+		accList = accList.OrderByDescending(x => x.Acc.Time).ToList();
+
+		if (grid != null)
+		{
+			await grid.Reload();
+		}
+
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		string? systemSettings = await DNISService.GetSystemSettingsREDIS();
+
+		startDate = DateTime.Now.AddDays(-1).Date;
+		endDate = DateTime.Now;
+
+		accList = await DNISService.GetAccAsync(startDate, endDate);
+		accList = accList.OrderByDescending(x => x.Acc.Time).ToList();
+
+	}
+
+	public async Task Export()
+	{
+		try
+		{
+			string xlsFileName = "calldetail_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".xlsx";
+			ExportResult response = await DNISService.ExportAccToExcel(startDate, endDate, new Query()
+				{
+					Filter = grid?.Query?.Filter ?? string.Empty,
+					OrderBy = $"{grid?.Query?.OrderBy}",
+					Expand = "",
+					Select = string.Join(",", grid?.ColumnsCollection?.Where(c => c.GetVisible() && !string.IsNullOrEmpty(c.Property))
+						.Select(c => c.Property.Contains(".") ? $"{c.Property} as {c.Property.Replace(".", "_")}" : c.Property) ?? Enumerable.Empty<string>())
+				});
+
+			if (!string.IsNullOrEmpty(response.ErrorMessage))
+			{
+				await DialogService.Alert(response.ErrorMessage, "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return;
+			}
+
+			if (response.FileBytes != null)
+			{
+				await JSRuntime.InvokeAsync<object>("saveAsFile", xlsFileName, Convert.ToBase64String(response.FileBytes));
+			}
+
+			//await JSRuntime.InvokeAsync<object>("saveAsFile", xlsFileName, Convert.ToBase64String(response.FileBytes));
+		}
+		catch (Exception ex)
+		{
+			await DialogService.Alert(ex.Message, "ERROR", new AlertOptions() { OkButtonText = "OK" });
+		}
+	}
+
+	private void OnCancelButtonClick()
+	{
+		_navigationManager.NavigateTo("/DNISList");
+	}
+
+}

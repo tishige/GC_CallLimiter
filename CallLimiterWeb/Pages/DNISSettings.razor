@@ -1,0 +1,630 @@
+﻿@using CallLimiterWeb.Data;
+@using Radzen.Blazor;
+@using Radzen;
+
+<PageTitle>CallLimit Settgings</PageTitle>
+<h3>CallLimit Settings</h3>
+
+@if (isLoading)
+{
+	<div>Loading...</div>
+}
+else
+{
+	<div class="row">
+		<div class="col-sm-4">
+			<RadzenTemplateForm TItem="LimitSettingsDTO" Data="@limitdata" Submit="HandleSubmit">
+				<RadzenDialog />
+
+				<div class="mb-3">
+					<RadzenLabel Component="Description" Text="Description" />
+					<RadzenTextBox style="display: block" Name="Description" Placeholder="Sales rep lunch" @bind-Value="limitdata.Description" class="w-100" />
+					<RadzenRequiredValidator Component="Description" Text="Description is required!" />
+				</div>
+
+				<div class="mb-3">
+					<RadzenLabel Component="DNIS" Text="DNIS" />
+					<RadzenTextBox style="display: block" Name="DNIS" Placeholder="+13175551234" @bind-Value="limitdata.DNIS" class="w-100" />
+					<RadzenRequiredValidator Component="DNIS" Text="DNIS is required!" />
+					<RadzenRegexValidator Component="DNIS" Text="DNIS must be less than 17 digits" Pattern="^(\+)?\d{1,17}$" />
+				</div>
+
+				<div class="mb-3 form-check form-switch">
+					<label for="isAllbusy" class="form-label">ALL Busy</label>
+					<RadzenSwitch id="isAllbusy" @bind-Value="limitdata.IsAllBusy" class="form-check-input"></RadzenSwitch>
+				</div>
+
+
+				<div class="mb-3">
+					<label for="type" class="form-label">Type:</label>
+					<RadzenDropDown id="type" @bind-Value="limitdata.Type" Data=@typeList class="form-select" disabled="@(limitdata.IsAllBusy==true)" style="width: 100%;" AllowClear="true"
+									Change="OntypeSelectionChanged">	</RadzenDropDown>
+				</div>
+
+				<div class="input-group mb-3">
+					<RadzenTextBox style="display: block; flex: 1; margin-right: 5px;" Name="DNIS" Placeholder="add concurrent DNIS" @bind-Value="newDNISItem" class="w-100" disabled="@(limitdata.IsAllBusy==true||isDNISListDisabled==true)" />
+					<div class="input-group-append">
+						<RadzenButton type="button" Text="ADD" Click="@AddItem" style="position: relative; top: 2px;" disabled="@(limitdata.IsAllBusy==true||isDNISListDisabled==true)" />
+					</div>
+				</div>
+
+				<ul class="list-group" disabled="@(limitdata.IsAllBusy==true||isDNISListDisabled==true)">
+
+					@foreach (var item in concurrentDNIS.ToList())
+					{
+						<li class="list-group-item" style="display: flex; justify-content: space-between;@(limitdata.IsAllBusy==true||isDNISListDisabled==true ? "background-color:#E9ECEF;" : "")">
+							@item
+							<button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveItem(item)" disabled="@(limitdata.IsAllBusy==true||isDNISListDisabled==true)">Delete</button>
+
+						</li>
+					}
+
+				</ul>
+
+				<div class="mb-1" style="margin-top: 10px;">
+
+					<RadzenDropDown Data="@GcQueueList" @bind-Value="limitdata.QueueList" Change="OnQueueSelectionChanged" @ref="queueListcomponent" TextProperty="QueueName"
+									Multiple=true AllowClear=true
+									FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" AllowFiltering="true" MaxSelectedLabels=11
+									Placeholder="Select Queues" Chips=true Style="width: 100%;" disabled="@(limitdata.IsAllBusy==true||isQueueListDisabled==true)" />
+
+
+				</div>
+
+				<div class="mb-3" style="margin-left: 150px;">
+					<label for="conditions" class="form-label mb-1">Conditions:</label>
+					<div class="mb-1">
+						<RadzenRadioButtonList @bind-Value="@limitdata.Conditions" TValue="string">
+							<Items>
+								<RadzenRadioButtonListItem Text="SUM" Value="@("SUM")" disabled="@(limitdata.IsAllBusy==true || limitdata.QueueList == null || limitdata.QueueList.Count() == 0)" class="out-border" />
+								<RadzenRadioButtonListItem Text="OR" Value="@("OR")" disabled="@(limitdata.IsAllBusy==true || limitdata.QueueList == null || limitdata.QueueList.Count() == 0)" class="out-border" />
+							</Items>
+						</RadzenRadioButtonList>
+					</div>
+				</div>
+
+				<div class="mb-3">
+					<label for="MaxLimitValue" class="form-label">MAX Limit value:</label>
+					<RadzenNumeric id="MaxLimitValue" @bind-Value="limitdata.MaxLimitValue" class="form-control" style="width: 100%;" Min="1" disabled="@(limitdata.IsAllBusy==true||limitdata.Type=="Queue Available Agents")"></RadzenNumeric>
+				</div>
+
+				<div class="mb-3">
+					<label for="availableAgentLimitValue" class="form-label">Number of Available Agents &lt;= :</label>
+					<RadzenNumeric id="availableAgentLimitValue" @bind-Value="limitdata.AvailableAgentsLimitValue" class="form-control" style="width: 100%;" Min="0" disabled="@(limitdata.IsAllBusy==true||limitdata.Type!="Queue Available Agents")"></RadzenNumeric>
+				</div>
+
+
+
+				<div class="mb-1 form-check form-switch">
+					<label for="isScheduled" class="form-label">Schedule</label>
+					<RadzenSwitch id="isScheduled" @bind-Value="limitdata.IsScheduled" class="form-check-input"></RadzenSwitch>
+				</div>
+
+
+				<div class="mb-3">
+					<label for="scheduleStart" class="form-label">Schedule Start:</label>
+					<RadzenDatePicker @bind-Value="limitdata.ScheduleStart" ShowTime="true" disabled="@(limitdata.IsScheduled==false)" style="width: 100%;"></RadzenDatePicker>
+				</div>
+
+				<div class="mb-3">
+					<label for="scheduleEnd" class="form-label">Schedule End:</label>
+					<RadzenDatePicker @bind-Value="limitdata.ScheduleEnd" ShowTime="true" disabled="@(limitdata.IsScheduled==false)" style="width: 100%;"></RadzenDatePicker>
+				</div>
+
+				<div style="display: flex; justify-content: space-between;">
+
+					<div class="mt-3 form-check form-switch">
+						<label for="isEnable" class="form-label">Enable</label>
+						<RadzenSwitch id="isEnable" @bind-Value="limitdata.IsEnabled" class="form-check-input"></RadzenSwitch>
+					</div>
+
+					<div class="mb-1" style="margin-top: 10px;">
+						<RadzenLabel Component="Division" Text="Division" />
+						<RadzenDropDown @bind-Value="limitdata.DivisionId" TValue="string" AllowFiltering="false" AllowClear="false"
+										Data=@userDivision TextProperty="DivisionName" ValueProperty="DivisionId" />
+
+					</div>
+
+				</div>
+
+				<div style="margin-top: 10px;margin-bottom: 10px;">
+					<RadzenButton ButtonType="ButtonType.Submit" Text="SAVE" style="margin-right: 10px;" />
+
+					<RadzenButton Text="CANCEL" Click="@OnCancelButtonClick" style="background-color: white; color: black; border-color: #ccc; margin-right: 100px;" />
+
+					<RadzenButton Text="DELETE" Click="@OnDeleteButtonClick" style="background-color: red; color: white; border-color: #ccc; " Visible="@(Mode==DNISEditMode.Edit)" />
+
+				</div>
+
+				@if (Mode == DNISEditMode.Edit)
+				{
+					<RadzenLabel Text="Created" />
+					<RadzenLabel Text="@limitdata.DateCreated.ToString()" />
+					<RadzenLabel Text="@limitdata.CreatedBy" />
+					<br />
+					@if (!String.IsNullOrEmpty(limitdata.LastModifiedBy))
+					{
+						<RadzenLabel Text="Modified" />
+						<RadzenLabel Text="@limitdata.DateModified.ToString()" />
+						<RadzenLabel Text="@limitdata.LastModifiedBy" />
+
+					}
+
+				}
+
+			</RadzenTemplateForm>
+
+		</div>
+
+
+	</div>
+}
+
+@code {
+
+	@inject NavigationManager _navigationManager
+	@inject IDNISService DNISService
+	@inject DialogService DialogService
+
+	[Parameter]
+	public DNISEditMode Mode { get; set; }
+	[Parameter]
+	public string? paramLimitSettingsId { get; set; }
+
+	private RadzenDropDown<List<QueueListDTO>>? queueListcomponent;
+
+	bool isDNISListDisabled = false;
+	bool isQueueListDisabled = false;
+	private List<string>? typeList;
+	private List<QueueListDTO>? GcQueueList;
+	private List<UserDivision>? userDivision;
+
+	private string? tempDivisionId = String.Empty;
+
+	private LimitSettingsDTO limitdata = new();
+
+	private string? newDNISItem;
+	private List<string> concurrentDNIS = new List<string>();
+
+	private bool isLoading = false;
+
+	private void AddItem()
+	{
+		if (!string.IsNullOrEmpty(newDNISItem))
+		{
+			concurrentDNIS.Add(newDNISItem);
+			limitdata.DNISList.Add(new DNISListDTO { DNIS = newDNISItem });
+			newDNISItem = string.Empty;
+		}
+	}
+
+	private void RemoveItem(string item)
+	{
+		concurrentDNIS.Remove(item);
+
+		var itemToRemove = limitdata.DNISList.FirstOrDefault(i => i.DNIS == item);
+		if (itemToRemove != null)
+		{
+			limitdata.DNISList.Remove(itemToRemove);
+		}
+
+	}
+
+	public async void HandleSubmit(LimitSettingsDTO limitSettings)
+	{
+		bool formValid = await ValidateFormData(limitSettings);
+
+		if (formValid && Mode==DNISEditMode.New)
+		{
+
+			Guid guid = Guid.NewGuid();
+			string generatedGUID = guid.ToString();
+			limitSettings.LimitSettingsId = generatedGUID;
+
+			if (limitSettings.DNISList == null)
+			{
+				limitSettings.DNISList = new List<DNISListDTO>();
+			}
+			else
+			{
+				foreach (var eachInDNISList in limitSettings.DNISList)
+				{
+					eachInDNISList.LimitSettingsId = generatedGUID;
+				}
+
+			}
+
+			if (limitSettings.QueueList == null)
+			{
+				limitSettings.QueueList = new List<QueueListDTO>();
+			}
+			else
+			{
+				foreach (var eachInQueueList in limitSettings.QueueList)
+				{
+					eachInQueueList.LimitSettingsId = generatedGUID;
+				}
+
+			}
+
+			limitSettings.DivisionName = userDivision!.Where(x => x.DivisionId == limitSettings.DivisionId).Select(x => x.DivisionName).FirstOrDefault();
+
+			var postResult = await DNISService.PostDNISSettings(limitSettings);
+
+			if (postResult != generatedGUID)
+			{
+				await DialogService.Alert($"{postResult}", "Add Settings", new AlertOptions() { OkButtonText = "OK" });
+			}
+			else
+			{
+				await DialogService.Alert("Saved", "Add Settings", new AlertOptions() { OkButtonText = "OK" });
+			 
+				limitdata = new();
+				StateHasChanged();
+				limitdata.DivisionId = userDivision!.Where(x => x.DivisionId == limitSettings.DivisionId).Select(x => x.DivisionId).FirstOrDefault();
+				concurrentDNIS.Clear();
+			}
+
+		}
+
+		if (formValid && Mode == DNISEditMode.Edit)
+		{
+			limitSettings.LimitSettingsId = paramLimitSettingsId;
+
+			if (limitSettings.DNISList !=null &&limitSettings.DNISList.Count > 0)
+			{
+				foreach (var eachInDNISList in limitSettings.DNISList)
+				{
+					eachInDNISList.LimitSettingsId = paramLimitSettingsId;
+				}
+
+				limitSettings.QueueList = new List<QueueListDTO>();
+			}
+
+			if (limitSettings.QueueList !=null && limitSettings.QueueList.Count > 0)
+			{
+				foreach (var eachInQueueList in limitSettings.QueueList)
+				{
+					eachInQueueList.LimitSettingsId = paramLimitSettingsId;
+				}
+
+				limitSettings.DNISList = new List<DNISListDTO>();
+			}
+
+			if (userDivision != null)
+			{
+				limitSettings.DivisionName = userDivision.Where(x => x.DivisionId == limitSettings.DivisionId).Select(x => x.DivisionName).FirstOrDefault();
+			}
+
+			var putResult = await DNISService.PutDNISSettings(paramLimitSettingsId!, limitSettings);
+
+			if (putResult != paramLimitSettingsId)
+			{
+				await DialogService.Alert($"{putResult}", "Save Failed", new AlertOptions() { OkButtonText = "OK" });
+			}
+			else
+			{
+				await DialogService.Alert("Saved", "Modify Settings", new AlertOptions() { OkButtonText = "OK" });
+				_navigationManager.NavigateTo("/DNISList");
+
+			}
+
+		}
+
+	}
+
+	public async Task<bool> ValidateFormData(LimitSettingsDTO limitSettings)
+	{
+		if (limitSettings.ScheduleStart >= limitSettings.ScheduleEnd)
+		{
+			await DialogService.Alert("End date and time cannot be earlier than the start date and time.", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+			return false;
+		}
+
+		if (limitdata.Type == "Concurrent Calls")
+		{
+			if (limitSettings.QueueList !=null && limitSettings.QueueList.Count != 0)
+			{
+				await DialogService.Alert("Remove Queue Settings", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+
+			if(limitSettings.DNISList!=null && limitSettings.DNISList.Count > 0)
+			{
+				await DialogService.Alert("Remove DNIS in concurrent DNIS list", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+
+
+		}
+
+		if (limitdata.Type == "Concurrent Calls SUM")
+		{
+			// DNIS List must be set
+			if(limitSettings.DNISList is null || limitSettings.DNISList.Count == 0)
+			{
+				await DialogService.Alert("Select DNIS", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+
+			if (limitSettings.DNISList.Any(x=>x.DNIS==limitSettings.DNIS))
+			{
+				await DialogService.Alert("DNIS is duplicated", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+
+			if (limitSettings.DNISList.GroupBy(x => x.DNIS).Any(g => g.Count() > 1))
+			{
+				await DialogService.Alert("DNIS List contains duplicate values", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+
+			if(limitSettings.QueueList !=null && limitSettings.QueueList.Count != 0)
+			{
+				await DialogService.Alert("Remove Queue Settings", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+		}
+
+		if (limitdata.Type == "Calls Waiting" || limitdata.Type == "Queue Interactions" || limitdata.Type == "Calls Waiting+Interactions" || limitdata.Type == "Queue Available Agents")
+		{
+			// Queue List must be set
+			if (limitSettings.QueueList is null || limitSettings.QueueList.Count == 0)
+			{
+				await DialogService.Alert("Select Queue", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+			else
+			{
+				// Fetch queue divisionID and Name in existing settings
+				foreach (var eachQueueinLMT in limitSettings.QueueList)
+				{
+					if (eachQueueinLMT.DivisionId == null)
+					{
+						eachQueueinLMT.DivisionId = GcQueueList?.Where(x => x.QueueId == eachQueueinLMT.QueueId).Select(x => x.DivisionId).FirstOrDefault();
+						eachQueueinLMT.DivisionName = GcQueueList?.Where(x => x.QueueId == eachQueueinLMT.QueueId).Select(x => x.DivisionName).FirstOrDefault();
+
+					}
+
+				}
+
+			}
+
+			if (limitSettings.DNISList !=null && limitSettings.DNISList.Count != 0)
+			{
+				await DialogService.Alert("Remove DNIS Settings", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				return false;
+			}
+
+			if(limitdata!=null && limitdata.DivisionId != null)
+			{
+				string divisionId = limitdata.DivisionId;
+
+				foreach (var eachInQueueList in limitSettings.QueueList)
+				{
+					if (eachInQueueList.DivisionId != divisionId)
+					{
+						var answer = await DialogService.Confirm($"The selected queue's division {eachInQueueList.DivisionName} does not correspond to this division. Are you sure you want to proceed?", "Warning", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+						if (answer is not null)
+						{
+							return (bool)answer;
+						}
+
+						return false;
+
+					}
+				}
+
+			}
+
+
+		}
+
+		return true;
+	}
+
+
+	private void OnCancelButtonClick()
+	{
+		_navigationManager.NavigateTo("/DNISList");
+	}
+
+	private async Task OnDeleteButtonClick()
+	{
+		var isClearList = await ClearListItems("Delete Settings");
+		if (isClearList)
+		{
+
+			await DNISService.DeleteDNISSettings(paramLimitSettingsId!);
+			_navigationManager.NavigateTo("/DNISList");
+			StateHasChanged();
+		}
+
+	}
+
+	public async void OntypeSelectionChanged(Object args)
+	{
+		var str = args is IEnumerable<object> ? string.Join(", ", (IEnumerable<object>)args) : args;
+
+		if ((string)str == "Concurrent Calls")
+		{
+			if (limitdata.QueueList != null && limitdata.QueueList.Count > 0)
+			{
+
+				var isClearList = await ClearListItems("Clear Selected queues");
+				if (isClearList)
+				{
+					limitdata.QueueList.Clear();
+					queueListcomponent!.Reset();
+					StateHasChanged();
+				}
+
+			}
+
+			if (limitdata.DNISList != null && limitdata.DNISList.Count > 0)
+			{
+
+				var isClearList = await ClearListItems("Clear Selected DNIS");
+				if (isClearList)
+				{
+					limitdata.DNISList.Clear();
+					concurrentDNIS.Clear();
+					StateHasChanged();
+				}
+
+			}
+
+			isDNISListDisabled = true;
+			isQueueListDisabled = true;
+
+		}
+
+		if ((string)str == "Concurrent Calls SUM")
+		{
+			if (limitdata.QueueList != null && limitdata.QueueList.Count > 0)
+			{
+				
+				var isClearList = await ClearListItems("Clear Selected queues");
+				if (isClearList)
+				{
+					limitdata.QueueList.Clear();
+					queueListcomponent!.Reset();
+					StateHasChanged();
+				}
+
+			}
+
+			isDNISListDisabled = false;
+			isQueueListDisabled = true;
+
+		}
+
+		if ((string)str == "Calls Waiting" || (string)str == "Queue Interactions" || (string)str == "Calls Waiting+Interactions" || (string)str == "Queue Available Agents")
+		{
+			if (limitdata.DNISList != null && limitdata.DNISList.Count > 0)
+			{
+				var isClearList = await ClearListItems("Clear Selected DNIS");
+				if (isClearList)
+				{
+					limitdata.DNISList.Clear();
+					concurrentDNIS.Clear();
+					StateHasChanged();
+				}
+			}
+
+			isDNISListDisabled = true;
+			isQueueListDisabled = false;
+
+		}
+	}
+
+	public async Task<bool> ClearListItems(string msg)
+	{
+		var answer = await DialogService.Confirm("Are you sure?", msg, new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+		if(answer is not null)
+		{
+			return (bool)answer;
+		}
+
+		return false;
+	}
+
+	public async Task<bool> QueueDivisionCheck(string msg)
+	{
+		var answer = await DialogService.Confirm("The selected queue does not correspond to this division. Are you sure you want to proceed?", msg, new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+		if (answer is not null)
+		{
+			return (bool)answer;
+		}
+
+		return false;
+	}
+
+
+
+	void OnDNISSelectionChanged(Object args)
+	{
+		var str = args is IEnumerable<object> ? string.Join(", ", (IEnumerable<object>)args) : args;
+
+		if (String.IsNullOrEmpty((string)str) && limitdata.Type!.StartsWith("Queue"))
+		{
+			isQueueListDisabled = false;
+		}
+		else
+		{
+			isQueueListDisabled = true;
+		}
+
+	}
+
+	void OnQueueSelectionChanged(Object args)
+	{
+		var str = args is IEnumerable<object> ? string.Join(", ", (IEnumerable<object>)args) : args;
+
+		if (String.IsNullOrEmpty((string)str) && limitdata.Type == "Concurrent Calls SUM")
+		{
+			isDNISListDisabled = false;
+		}
+		else
+		{
+			isDNISListDisabled = true;
+		}
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		isLoading = true;
+		try
+		{
+			await base.OnInitializedAsync();
+
+			typeList = new List<string> { "Concurrent Calls", "Concurrent Calls SUM", "Calls Waiting", "Queue Interactions", "Calls Waiting+Interactions", "Queue Available Agents" };
+			GcQueueList = await DNISService.FetchQueueList();
+			userDivision = await DNISService.FetchUserDivision("");
+
+			if (GcQueueList == null || userDivision == null)
+			{
+				await DialogService.Alert("Fetch from Genesys Cloud failure", "ERROR", new AlertOptions() { OkButtonText = "OK" });
+				_navigationManager.NavigateTo("/DNISList");
+			}
+
+			tempDivisionId = userDivision!.Select(x => x.DivisionId).FirstOrDefault();
+			limitdata.DivisionId = tempDivisionId;
+
+			isDNISListDisabled = true;
+			isQueueListDisabled = true;
+		}
+		finally
+		{
+			isLoading = false;
+		}
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		if (Mode == DNISEditMode.Edit)
+		{
+			limitdata = await DNISService.GetDNISSettingsByIdAsync(paramLimitSettingsId!);
+			if(limitdata.DNISList != null && limitdata.DNISList.Count > 0)
+			{
+				isDNISListDisabled = false;
+				isQueueListDisabled = true;
+
+				foreach (var eachConcDNIS in limitdata.DNISList)
+				{
+					concurrentDNIS.Add(eachConcDNIS.DNIS!);
+				}
+
+			}
+
+			if (limitdata.QueueList != null && limitdata.QueueList.Count > 0)
+			{
+				isDNISListDisabled = true;
+				isQueueListDisabled = false;
+			}
+
+		}
+		
+	}
+
+}

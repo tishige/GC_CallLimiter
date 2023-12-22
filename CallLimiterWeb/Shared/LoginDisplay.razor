@@ -1,0 +1,47 @@
+﻿
+@using Radzen.Blazor;
+@using Radzen;
+
+<AuthorizeView>
+    <Authorized>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>Org: @context.User.FindFirst("OrgName")?.Value User: @context.User.Identity?.Name</div>
+
+            <form method="post" action="/Identity/Account/Logout">
+                <button type="submit" class="nav-link btn btn-link">Log out</button>
+            </form>
+            <RadzenButton Click="@OnACCButtonClick" Icon="description" ButtonStyle="ButtonStyle.Primary" title="Show Call Details" style="position: relative; margin-right: 10px;" />
+
+            <RadzenButton Click="@OnANIButtonClick" Icon="highlight_off" ButtonStyle="ButtonStyle.Primary" title="Configure ANI Block" style="position: relative; margin-right: 10px;" />
+
+            <RadzenButton Click="@OnSettingButtonClick" Icon="settings" ButtonStyle="ButtonStyle.Primary" title="Change System Settings" style="position: relative;" />
+
+
+        </div>
+    </Authorized>
+
+</AuthorizeView>
+@code {
+    @inject NavigationManager _navigationManager
+
+    private void OnSettingButtonClick()
+    {
+        _navigationManager.NavigateTo("/Settings");
+    }
+
+    private void OnACCButtonClick()
+    {
+        _navigationManager.NavigateTo("/ACCList");
+    }
+
+    private void OnANIButtonClick()
+    {
+        _navigationManager.NavigateTo("/ANISettings");
+    }
+
+
+
+
+    
+
+}

@@ -1,0 +1,56 @@
+﻿@page
+@using Microsoft.AspNetCore.Authentication
+@using System.Security.Claims
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+
+@model BlazorApp2.Areas.MyLogin.Pages.IndexModel
+@{  
+    Layout = null;  
+}  
+
+@*Authorization Code Flow
+
+*@<script>
+    window.onload = function () {
+        var urlParams = new URLSearchParams(window.location.search);
+
+        var code = urlParams.get('code');
+
+          if (code) {
+              var xhr = new XMLHttpRequest();
+              xhr.open('POST', '/GCLogin/Index');
+              xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+              xhr.onload = function () {
+                  if (xhr.status === 200) {
+                      window.location.href = '/DNISList';
+                  } else {
+                      var logoutForm = document.createElement('form');
+                      logoutForm.method = 'POST';
+                      logoutForm.action = '/Identity/Account/Logout';
+
+                      var submitButton = document.createElement('button');
+                      submitButton.type = 'submit';
+                      submitButton.style.display = 'none';
+                      logoutForm.appendChild(submitButton);
+                      document.body.appendChild(logoutForm);
+                      submitButton.click();
+                  }
+              };
+              xhr.send('code=' + encodeURIComponent(code));
+              
+          }
+          else {
+              window.location.href = '/';
+          }
+    };
+</script>
+
+
+
+
+
+
+
+

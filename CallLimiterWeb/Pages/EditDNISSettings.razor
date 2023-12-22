@@ -1,0 +1,9 @@
+﻿@page "/DNIS/edit/{limitSettingsId}"
+@using CallLimiterWeb.Data;
+
+<DNISSettings Mode="DNISEditMode.Edit" paramLimitSettingsId="@limitSettingsId"></DNISSettings>
+
+@code {
+	[Parameter]
+	public string? limitSettingsId { get; set; }
+}

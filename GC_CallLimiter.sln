@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33927.249
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallLimiter", "CallLimiter\CallLimiter.csproj", "{89275F01-5398-470F-93C5-D91C2225A322}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallLimiterWeb", "CallLimiterWeb\CallLimiterWeb.csproj", "{88CD3FDE-4434-4973-A436-86FECC7FA777}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{D7352217-281B-48D5-805C-8FF22D8DF6F7}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\CLM_Install.sh = Scripts\CLM_Install.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Kamailio", "Kamailio", "{FDDC63B1-C436-44E2-B1D0-E4EA9F12E900}"
+	ProjectSection(SolutionItems) = preProject
+		Kamailio\kamailio.cfg = Kamailio\kamailio.cfg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ソリューション項目", "ソリューション項目", "{27405E9E-327A-47DB-B2A5-86C7F16FD051}"
+	ProjectSection(SolutionItems) = preProject
+		Readme.md = Readme.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{89275F01-5398-470F-93C5-D91C2225A322}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89275F01-5398-470F-93C5-D91C2225A322}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89275F01-5398-470F-93C5-D91C2225A322}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89275F01-5398-470F-93C5-D91C2225A322}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88CD3FDE-4434-4973-A436-86FECC7FA777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88CD3FDE-4434-4973-A436-86FECC7FA777}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88CD3FDE-4434-4973-A436-86FECC7FA777}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88CD3FDE-4434-4973-A436-86FECC7FA777}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {58BD1D27-E565-463F-80DC-C5B079D8455D}
+	EndGlobalSection
+EndGlobal

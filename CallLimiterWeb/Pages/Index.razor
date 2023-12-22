@@ -1,0 +1,42 @@
+﻿@page "/"
+@inject IConfiguration Configuration
+@inject NavigationManager _navigationManager
+
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>GC_CallLimiter</PageTitle>
+
+<div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; gap: 20px; margin-top: -50px;">
+    <h1>Genesys Cloud CallLimiter</h1>
+    <button type="submit" title="Login" class="btn btn-primary btn-login" @onclick="NavigateToLoginUrl"
+            style="width: 200px; height: 70px; font-weight: 700; font-size: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 10px;">
+        Login
+    </button>
+</div>
+
+@code {
+    private void NavigateToLoginUrl()
+    {
+        var environment = Configuration["GenesysCloud:Environment"];
+        var clientId = Configuration["GenesysCloud:ClientId"];
+        var redirectUri = Configuration["GenesysCloud:RedirectUri"];
+
+        var url = $"https://login.{environment}/oauth/authorize?response_type=code&client_id={clientId}&redirect_uri={redirectUri}";
+        _navigationManager.NavigateTo(url);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user?.Identity?.IsAuthenticated==true)
+            {
+                _navigationManager.NavigateTo("/DNISList");
+            }
+        }
+    }
+
+}

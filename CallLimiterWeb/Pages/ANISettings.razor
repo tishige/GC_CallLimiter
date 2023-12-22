@@ -1,0 +1,152 @@
+﻿@page "/ANISettings"
+
+@using CallLimiterWeb.Data;
+@using Radzen.Blazor;
+@using Radzen;
+
+<PageTitle>ANI Block Settings</PageTitle>
+<h3>ANI Block Settings</h3>
+
+@if (aniList is null)
+{
+	<p>Loading</p>
+}
+else
+{
+
+	<div class="row">
+		<div class="col-sm-4">
+			<RadzenTemplateForm TItem="AniSetting" Data="@newAniSetting" Submit="HandleSubmit">
+				<RadzenDialog />
+
+				<div class="mb-3">
+					<RadzenLabel Component="ANI" Text="ANI" />
+					<div style="display: flex;">
+						<RadzenTextBox style="margin-right: 20px; height: 35px;" Name="ANI" Placeholder="+13175551234" @bind-Value="@newAniSetting.Ani" class="w-100" />
+						<RadzenButton ButtonType="ButtonType.Submit" Text="Add" style="height: 35px;width;50px" />
+					</div>
+					<RadzenRequiredValidator Component="ANI" Text="ANI is required!" />
+					<RadzenRegexValidator Component="ANI" Text="ANI must be less than 17 digits" Pattern="^(\+)?\d{1,17}$" />
+				</div>
+
+
+
+
+
+			</RadzenTemplateForm>
+		</div>
+	</div>
+
+	<div class="layout-container">
+
+		<RadzenDataGrid @ref="grid" AllowColumnPicking="false" AllowFiltering="true" AllowPaging="true" AllowSorting="true" Data="@aniList" TItem="ANIList" PageSize=50 >
+
+			<Columns>
+				<RadzenDataGridColumn TItem="ANIList" Property="ANIList.ANI" Title="ANI" />
+				<RadzenDataGridColumn TItem="ANIList" Property="ANIList.DateCreated" Title="Created Date" />
+				<RadzenDataGridColumn TItem="ANIList" Property="ANIList.CreatedBy" Title="Created By" />
+				<RadzenDataGridColumn TItem="ANIList" Property="ANIList.Delete" Title="DELETE" Filterable="false">
+
+					<Template Context="ANI">
+						<RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteANI(ANI))" @onclick:stopPropagation="true">
+						</RadzenButton>
+					</Template>
+
+
+					
+				</RadzenDataGridColumn>
+
+
+			</Columns>
+		</RadzenDataGrid>
+
+
+
+	</div>
+	<RadzenButton Text="BACK" Click="@OnCancelButtonClick" style="background-color: white; color: black; border-color: #ccc; margin-right: 100px;margin-top: 20px;" />
+
+}
+
+
+
+@code {
+@inject NavigationManager _navigationManager;
+	@inject DialogService DialogService;
+	@inject IDNISService DNISService;
+
+	private AniSetting newAniSetting = new AniSetting();
+
+	private List<ANIList>? aniList;
+	RadzenDataGrid<ANIList>? grid;
+
+
+	protected override async Task OnInitializedAsync()
+	{
+
+		aniList = await DNISService.GetANISettingsAsync();
+
+	}
+
+
+	private void OnCancelButtonClick()
+	{
+		_navigationManager.NavigateTo("/DNISList");
+	}
+
+	public async void HandleSubmit(AniSetting _ani)
+	{
+		if(_ani!=null && _ani.Ani != null)
+		{
+			var postResult = await DNISService.PostANISettings(_ani.Ani);
+
+			if (postResult != _ani.Ani)
+			{
+				await DialogService.Alert($"{postResult}", "Add ANI Settings", new AlertOptions() { OkButtonText = "OK" });
+			}
+			else
+			{
+				await DialogService.Alert("Saved", "Add Settings", new AlertOptions() { OkButtonText = "OK" });
+				newAniSetting.Ani = "";
+				aniList = await DNISService.GetANISettingsAsync();
+				StateHasChanged();
+
+			}
+
+		}
+
+
+	}
+
+	private async void DeleteANI(ANIList _ani)
+	{
+
+		if (_ani?.ANI != null)
+		{
+			var postResult = await DNISService.DeleteANISettings(_ani.ANI);
+
+			if (postResult != _ani.ANI)
+			{
+				await DialogService.Alert($"{postResult}", "Delete ANI Settings", new AlertOptions() { OkButtonText = "OK" });
+			}
+			else
+			{
+				await DialogService.Alert("Saved", "Delete Settings", new AlertOptions() { OkButtonText = "OK" });
+				aniList = await DNISService.GetANISettingsAsync();
+
+				StateHasChanged();
+
+			}
+
+		}
+
+		
+	}
+
+	public class AniSetting
+	{
+		public string? Ani { get; set; }
+	}
+
+	
+
+}

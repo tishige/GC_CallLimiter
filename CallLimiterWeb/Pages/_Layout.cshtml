@@ -1,0 +1,61 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@namespace CallLimiterWeb.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link href="CallLimiterWeb.styles.css" rel="stylesheet" />
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
+
+    <link href="css/site.css" rel="stylesheet" />
+
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <style>
+
+        .rz-state-disabled {
+            background-color: #e9ecef !important;
+            --rz-input-disabled-background-color: #e9ecef !important;
+            --rz-input-background-color: #e9ecef !important;
+            --rz-input-disabled-color: #000000 !important;
+        }
+
+        .rz-radio-button-list-horizontal.valid.modified {
+            outline: none !important;
+            border: none !important;
+        }
+
+        .rz-column-title {
+            font-weight: bold !important;
+        }
+
+        .rz-primary {
+            background-color: #1B6EC2 ;
+        }
+
+    </style>
+
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+</head>
+<body>
+    @RenderBody()
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

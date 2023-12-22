@@ -1,0 +1,116 @@
+﻿@page "/Settings"
+
+@using CallLimiterWeb.Data;
+@using Radzen.Blazor;
+@using Radzen;
+
+<PageTitle>CallLimit Settings</PageTitle>
+<h3>System Limit Setting</h3>
+
+<div class="row">
+	<div class="col-sm-4">
+		<RadzenTemplateForm TItem="string" Data="@setting" Submit="HandleSubmit">
+			<RadzenDialog />
+
+			<div class="mb-3">
+				<label for="limitMode" class="form-label mb-1">Limit Mode:</label>
+				<div class="mb-1">
+					<RadzenRadioButtonList @bind-Value="@setting" TValue="string">
+						<Items>
+							<RadzenRadioButtonListItem Text="Unlimited" Value="@("Unlimited")" class="out-border" />
+							<RadzenRadioButtonListItem Text="ALL Busy" Value="@("AllBusy")" class="out-border" />
+							<RadzenRadioButtonListItem Text="DNIS" Value="@("DNIS")" class="out-border" />
+						</Items>
+					</RadzenRadioButtonList>
+				</div>
+			</div>
+
+			<div style="margin-top: 10px;margin-bottom: 10px;">
+				<RadzenButton ButtonType="ButtonType.Submit" Text="SAVE" style="margin-right: 10px;" />
+			</div>
+		</RadzenTemplateForm>
+	</div>
+</div>
+
+<hr>
+<h3>Redis Data Recovery</h3>
+<div class="row">
+	<div class="col-sm-4">
+		<div style="color: red; margin-bottom: 10px;">
+			Please perform Redis recovery if you have restored MariaDB or experienced an issue with the Redis server within 1 hour after changing any settings.
+		</div>
+		<div style="margin-top: 10px;margin-bottom: 10px;">
+			<RadzenButton Text="Recovery" Click="@(async () => await RecoveryREDIS(setting))" style="background-color: red; color: white;" />
+		</div>
+	</div>
+</div>
+
+<hr>
+<div class="row">
+	<div class="col-sm-4 d-flex justify-content-start">
+		<div style="margin-top: 10px;margin-bottom: 10px;">
+			<RadzenButton Text="BACK" Click="@OnCancelButtonClick" style="background-color: white; color: black; border-color: #ccc;" />
+		</div>
+	</div>
+</div>
+
+
+
+
+
+@code {
+	@inject NavigationManager _navigationManager
+	@inject DialogService DialogService
+	@inject IDNISService DNISService
+	private string? setting;
+
+	public async void HandleSubmit(string setting)
+	{
+		var postResult = await DNISService.PostSystemSettingsREDIS(setting);
+
+		if (postResult != "Success")
+		{
+			await DialogService.Alert($"{postResult}", "Settings", new AlertOptions() { OkButtonText = "OK" });
+		}
+		else
+		{
+			await DialogService.Alert("Saved", "Settings", new AlertOptions() { OkButtonText = "OK" });
+		}
+		
+	}
+
+	private void OnCancelButtonClick()
+	{
+		_navigationManager.NavigateTo("/DNISList");
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+
+		setting = await DNISService.GetSystemSettingsREDIS();
+		
+	}
+
+	public async Task RecoveryREDIS(string? setting)
+	{
+		var answer = await DialogService.Confirm("Are you sure?", "Recovery REDIS", new ConfirmOptions() { OkButtonText = "Yes", CancelButtonText = "No" });
+		if ((bool)answer)
+		{
+			var recoveryResult = await DNISService.RecoveryREDIS(setting);
+
+			if (recoveryResult != "Success")
+			{
+				await DialogService.Alert($"{recoveryResult}", "Recovery", new AlertOptions() { OkButtonText = "OK" });
+			}
+			else
+			{
+				await DialogService.Alert("Recovery successful", "Recovery", new AlertOptions() { OkButtonText = "OK" });
+			}
+			
+		}
+
+	}
+
+
+}

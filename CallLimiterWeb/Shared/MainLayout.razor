@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+@inject VersionService VersionService
+
+@using Radzen.Blazor;
+@using Radzen;
+@using static CallLimiterWeb.Program;
+
+<PageTitle>CallLimiterWeb</PageTitle>
+
+<div class="page">
+
+    <main>
+
+        <div class="top-row d-flex justify-content-between align-items-center">
+            <div>Version @VersionService.GetVersion()</div>
+            <LoginDisplay />
+        </div>
+
+
+        <article class="content px-4">
+            <ErrorBoundary>
+                <ChildContent>
+                    @Body
+                </ChildContent>
+                <ErrorContent>
+                    <p>Error @context.Message</p>
+                    <p>Please select Log out.</p>
+
+                </ErrorContent>
+            </ErrorBoundary>
+        </article>
+    </main>
+</div>
+
