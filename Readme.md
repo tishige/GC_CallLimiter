@@ -109,7 +109,7 @@ Note: Do NOT set CLM IP address for outbound settings as CLM does not intervene 
 	* The script file CLM_Install.sh contains all necessary steps to install CLM application.  
 	
 	```
-	curl -sSL -o CLM_Install.sh https://raw.githubusercontent.com/tishige/GC_CallLimiter/main/CLM_Install.sh && sudo bash CLM_Install.sh
+	curl -sSL -o CLM_Install.sh https://raw.githubusercontent.com/tishige/GC_CallLimiter/main/Scripts/CLM_Install.sh && sudo bash CLM_Install.sh
 	```
 	* Paste the above values in response to each of the installer's prompts.  
 
