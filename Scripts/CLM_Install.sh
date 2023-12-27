@@ -901,7 +901,7 @@ logInfo "Set Unlimited mode in Redis."
 redis-cli SET systemSettings "Unlimited"
 
 # -------------------- Fetch kamailio.cfg for CallLimiter -------------------- #
-if ! curl -sSL https://raw.githubusercontent.com/tishige/CLM/main/kamailio.cfg -o kamailio.cfg; then
+if ! curl -sSL https://raw.githubusercontent.com/tishige/GC_CallLimiter/main/Kamailio/kamailio.cfg -o kamailio.cfg; then
     logError "Failed to download kamailio.cfg"
     exit 1
 fi
