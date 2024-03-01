@@ -10,8 +10,8 @@ echo "";
 echo "Ver 1.0.0"
 
 # ------------------------------ CLM files path ------------------------------ #
-CLM_SERVER_URL="https://github.com/tishige/CallLimiter/releases/download/v1.0.0/CallLimiter.zip"
-CLM_WEB_URL="https://github.com/tishige/CallLimiter/releases/download/v1.0.0/CallLimiterWeb.zip"
+CLM_SERVER_URL="https://github.com/tishige/GC_CallLimiter/releases/download/v1.0.0/CallLimiter.zip"
+CLM_WEB_URL="https://github.com/tishige/GC_CallLimiter/releases/download/v1.0.0/CallLimiterWeb.zip"
 
 # ---------------------------------- Logging --------------------------------- #
 DEFAULT='\033[0m'
